@@ -141,8 +141,7 @@ histories = [ [ start ], [ start ] ]
 playerSolved = [ false, false ]
 ops = parseOps OPS
 opButtons = []
-labels = [ "A", "B", "C", "D", "E", "F", "G", "H" ]
-currentPlayer = 0
+labels = "ABCDEFGH"
 
 player1CurrentEl = document.getElementById "player1-current"
 player2CurrentEl = document.getElementById "player2-current"
