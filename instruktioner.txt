@@ -1,0 +1,62 @@
+﻿- Skapa en funktion som använder BFS för att lösa hur man tar sig från ett komplext heltal till ett annat med operationerna +1, *2, *i samt spegling i diagonalen Im==Re.
+- Implementera i CoffeeScript och lägg i `sketch.coffee`.
+- Indentera alltid med tab (1 tab = 4 blanksteg), även i befintliga filer.
+- Lägg till `index.html`.
+- Koppla `index.html` till CoffeeScript (inte JS‑kopia).
+- Visa resultatet av `bfsComplex(1+3i, 20+5i)`.
+- Visa resultat i formatet `a+ib`.
+- Visa inte `op` i resultatet.
+- Visa bara texten `a+ib`, en rad per steg.
+- Format: `i1 => i`.
+- Format: `ib => bi`.
+- Skapa fyra knappar och låt användaren lösa själv.
+- Visa inte lösningen; visa startpunkt och slutpunkt istället.
+- Lägg till Undo‑knapp.
+- När målet nås ska användaren se båda lösningarna.
+- Ändra `index.html` till att använda `sketch.coffee`.
+- Visa resultat som `a+ib` istället för `{re, im}`.
+- Ta bort prompter/kolon; visa bara `a+bi till c+di`.
+- Ta bort allt till höger om `|`.
+- Visa current value till target.
+- Låt användaren ange operationerna med RPN.
+- Antalet operationer ska vara antalet knappar (antal mellanslag + 1).
+- `x` är realdel, `y` är imaginärdel; `c` byter tecken.
+- OPS anges som konstant i koden.
+- Knapparna ska heta A–D.
+- Lägg till tabell som förklarar vad knapparna betyder.
+- Lägg till en andra spelare.
+- Spelare 2 ska se likadan ut som spelare 1 och uppta högra halvan.
+- Target ska visas en gång, i mitten.
+- "Nytt spel" ska bara finnas en gång.
+- Tabellen ska bara visas en gång, i mitten.
+- Knappar ska påverka den egna spelaren.
+- Tabellen ska ha tre kolumner: Namn, x, y (utan kolon).
+- Stöd upp till åtta knappar (A–H).
+- Testa åtta springardrag: `x1+:y2+ x1+:y2- x1-:y2+ x1-:y2- x2+:y1+ x2+:y1- x2-:y1+ x2-:y1-`.
+- Begränsa drag till brädet 1..8 för både re och im.
+- Ångra ändring av operandordning för minus (behåll tidigare korrekt ordning).
+- Byt rubrik till "Shortcut 2D" och centrera den.
+- Använd samma font överallt (Arial).
+- Visa två schackbräden, 8x8, med siffror till vänster och bokstäver under.
+- Tomma rutor ska innehålla en bullet.
+- Startrutan röd bakgrund, target grön bakgrund.
+- Flytta ner knapparna en knapphöjd.
+- Gör current/target‑texten ovanför brädet dubbelt så stor.
+- Nåbara rutor ska visa bokstav A–H som visar vilken knapp man ska trycka.
+- Röd/grön ruta ska inte visa text (förutom när grön ruta är nåbar och ska visa bokstav).
+- Samma fontstorlek i alla rutor.
+- Ta bort rubrikerna "Spelare 1" och "Spelare 2".
+- Visa lösningar i en centrerad tabell med kolumnerna Spelare 1, Dator, Spelare 2.
+- Ta bort rubrikerna i lösningstabellen.
+- Ta bort rubriken "Losningar".
+- Schackrutorna ska alltid vara kvadratiska.
+- Kolumner utan text ska inte vara smalare; flytta a–h under brädet.
+- Ta bort rutorna (ramarna) för a–h och 1–8‑texterna.
+- Slumpa start‑ruta och välj slumpmässigt en ruta som är nåbar med exakt n drag.
+- Starta problemlösning igen men undvik oändliga loopar.
+- Sluta söka efter lösning om det riskerar att hänga sig.
+- Target kan vara 2+3i med ett steg (x1+:y2+).
+- Båda spelarna måste vara klara innan man går vidare.
+- Villkor för att öka n: båda spelarna löser med rätt antal drag.
+- Om båda spelarna misslyckas: minska n.
+- Då det gäller texterna a–h och 1–8: ta bort rutorna för dessa.
