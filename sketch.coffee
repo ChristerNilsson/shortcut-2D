@@ -1,3 +1,4 @@
+import { button, createSignal, div, table, td, th, tr } from "https://cdn.jsdelivr.net/gh/sigmentjs/sigment-ng@1.3.4/dist/index.js"
 import _ from "https://cdn.jsdelivr.net/npm/lodash-es@4.17.21/lodash.js"
 
 echo = console.log 
@@ -14,7 +15,7 @@ keyOf = (z) -> "#{z.re},#{z.im}"
 
 reconstructPath = (prev, move, endKey) ->
 	path = []
-	k = endKey
+	k = endKey 
 	while k? 
 		entry = prev[k]
 		if entry?
@@ -136,42 +137,61 @@ isOnBoard = (z) ->
 start = { re: 1, im: 1 }
 target = { re: 2, im: 3 }
 n = 1
+expectedMoves = n + 2
+playerCount = 2
 
-histories = [ [ start ], [ start ] ]
-playerSolved = [ false, false ]
+histories = ([ start ] for [0...playerCount])
+playerSolved = (false for [0...playerCount])
 ops = parseOps OPS
-opButtons = []
+opButtons = [] 
 labels = "ABCDEFGH"
+players = []
+targetEl = null
+solutionsEl = null
+bfsSolutionEl = null
+newGameBtn = null
+opsTableEl = null
 
-player1CurrentEl = document.getElementById "player1-current"
-player2CurrentEl = document.getElementById "player2-current"
-targetEl = document.getElementById "target"
-player1BoardEl = document.getElementById "player1-board"
-player2BoardEl = document.getElementById "player2-board"
-solutionsEl = document.getElementById "solutions"
-player1SolutionEl = document.getElementById "player1-solution"
-player2SolutionEl = document.getElementById "player2-solution"
-bfsSolutionEl = document.getElementById "bfs-solution"
-newGameBtn = document.getElementById "new-game"
-opsEl = document.getElementById "ops"
-opsEl2 = document.getElementById "ops-2"
-opsTableEl = document.getElementById "ops-table"
+createPlayerSignals = ->
+	[current, setCurrent] = createSignal ""
+	[expected, setExpected] = createSignal ""
+	[board, setBoard] = createSignal null
+	{
+		current
+		setCurrent
+		expected
+		setExpected
+		board
+		setBoard
+	}
+
+Player = (playerId, currentSignal, boardSignal, expectedSignal, onUndo) ->
+	# undoEl = button { onclick: onUndo }, "Undo"
+	# controlsEl = div { class: "controls" },
+	# 	div { class: "ops" }
+	# 	button { onclick: onUndo }, "Undo"
+	div { class: "player", id: playerId },
+		div {}, currentSignal
+		div {}, boardSignal
+		div { class: "expected" }, div {}, expectedSignal
+		div { class: "controls" },
+			div { class: "ops" }
+			button { onclick: onUndo }, "Undo"
 
 disableControls = (isDisabled) ->
 	for btn in opButtons
 		btn.disabled = isDisabled
 
 render = ->
-	player1CurrentEl.textContent = formatComplex(histories[0][histories[0].length - 1])
-	player2CurrentEl.textContent = formatComplex(histories[1][histories[1].length - 1])
 	targetEl.textContent = formatComplex(target)
-	renderBoard player1BoardEl, histories[0][histories[0].length - 1]
-	renderBoard player2BoardEl, histories[1][histories[1].length - 1]
+	for player, idx in players
+		history = histories[idx]
+		player.signals.setCurrent formatComplex(history[history.length - 1])
+		player.signals.setExpected "#{expectedMoves - (history.length - 1) - 2}"
+		player.signals.setBoard buildBoard history[history.length - 1]
 
-renderBoard = (containerEl, currentPos) ->
-	containerEl.textContent = ""
-	table = document.createElement "table"
-	table.className = "board"
+buildBoard = (currentPos) ->
+	rows = []
 
 	labelsForOps = ops.map (op, idx) -> labels[idx] or op.label
 	reachable = new Map()
@@ -181,13 +201,9 @@ renderBoard = (containerEl, currentPos) ->
 		reachable.set keyOf(candidate), labelsForOps[idx]
 
 	for rank in [8..1]
-		row = document.createElement "tr"
-		rankCell = document.createElement "th"
-		rankCell.className = "rank edge"
-		rankCell.textContent = rank
-		row.appendChild rankCell
+		cells = []
+		cells.push th { class: "rank edge" }, "#{rank}"
 		for file in [1..8]
-			cell = document.createElement "td"
 			classes = [ "cell" ]
 			classes.push "dark" if (file + rank) % 2 is 0
 			key = "#{file},#{rank}"
@@ -199,47 +215,40 @@ renderBoard = (containerEl, currentPos) ->
 			classes.push "current-cell" if isCurrent
 
 			symbol = "•"
-			if isStart
+			if isStart or isCurrent
 				symbol = ""
-			else if isTarget and reachable.has key
-				classes.push "reachable-cell"
-				symbol = reachable.get key
-			else if isCurrent
-				symbol = formatComplex currentPos
+			else if isTarget
+				if reachable.has key
+					classes.push "reachable-cell"
+					symbol = reachable.get key
+				else
+					symbol = ""
 			else if reachable.has key
 				classes.push "reachable-cell"
 				symbol = reachable.get key
-			cell.className = classes.join " "
-			cell.textContent = symbol
-			row.appendChild cell
-		table.appendChild row
+			cells.push td { class: classes.join(" ") }, symbol
+		rows.push tr {}, cells...
 
-	footRow = document.createElement "tr"
-	footCorner = document.createElement "th"
-	footCorner.className = "corner edge"
-	footRow.appendChild footCorner
+	footCells = []
+	footCells.push th { class: "corner edge" }
 	for file in [1..8]
-		th = document.createElement "th"
-		th.className = "edge"
-		th.textContent = String.fromCharCode 96 + file
-		footRow.appendChild th
-	table.appendChild footRow
+		footCells.push th { class: "edge" }, String.fromCharCode 96 + file
+	rows.push tr {}, footCells...
 
-	containerEl.appendChild table
+	table { class: "board" }, rows...
 
 showSolutions = ->
-	playerOne = histories[0].map formatComplex
-	playerTwo = histories[1].map formatComplex
-	player1SolutionEl.textContent = playerOne.join "\n"
-	player2SolutionEl.textContent = playerTwo.join "\n"
+	userSteps = []
+	for player, idx in players
+		playerSteps = histories[idx].map formatComplex
+		player.solutionEl.textContent = playerSteps.join "\n"
+		userSteps.push histories[idx].length - 1
 	bfsPath = bfsComplex start, target
 	bfsSolutionEl.textContent = ((bfsPath or []).map ({ state }) -> formatComplex(state)).join "\n"
 	solutionsEl.hidden = false
 	bfsSteps = Math.max 0, (bfsPath or []).length - 1
-	userSteps1 = histories[0].length - 1
-	userSteps2 = histories[1].length - 1
-	bothCorrect = userSteps1 is bfsSteps and userSteps2 is bfsSteps
-	bothWrong = userSteps1 isnt bfsSteps and userSteps2 isnt bfsSteps
+	bothCorrect = userSteps.every (steps) -> steps is bfsSteps
+	bothWrong = userSteps.every (steps) -> steps isnt bfsSteps
 	if bothCorrect
 		n += 1 
 	else if bothWrong
@@ -247,8 +256,8 @@ showSolutions = ->
 
 hideSolutions = -> 
 	solutionsEl.hidden = true
-	player1SolutionEl.textContent = ""
-	player2SolutionEl.textContent = ""
+	for player in players
+		player.solutionEl.textContent = ""
 	bfsSolutionEl.textContent = ""
 
 applyMove = (playerIndex, op) ->
@@ -258,7 +267,7 @@ applyMove = (playerIndex, op) ->
 	return unless isOnBoard next
 	history.push next
 	playerSolved[playerIndex] = next.re is target.re and next.im is target.im
-	if playerSolved[0] and playerSolved[1]
+	if playerSolved.every (solved) -> solved
 		disableControls true
 		showSolutions()
 	else
@@ -292,52 +301,90 @@ reachableInSteps = (from, steps) ->
 				next.set keyOf(candidate), candidate
 		current = next
 		break if current.size is 0
-	[ state for [ , state ] from current ]
+	state for [ , state ] from current
 
 generateTarget = (from, steps) ->
 	reachable = reachableInSteps from, steps
 	return from if reachable.length is 0
-	randomChoice reachable[0]  
+	candidates = reachable.filter (pos) -> pos.re isnt from.re or pos.im isnt from.im
+	return from if candidates.length is 0
+	randomChoice candidates
 
 newGame = ->
 	echo 'newGame' 
+	attempts = 0
 	start = randomSquare()
 	target = generateTarget start, n
+	while n > 0 and target.re is start.re and target.im is start.im and attempts < 50
+		start = randomSquare()
+		target = generateTarget start, n
+		attempts += 1
+	expectedMoves = n + 2
 	echo 'target',target
-	histories = [ [ start ], [ start ] ]
-	playerSolved = [ false, false ]
+	histories = ([ start ] for [0...playerCount])
+	playerSolved = (false for [0...playerCount])
 	disableControls false
 	hideSolutions()
 	render()
 
-document.getElementById("undo").addEventListener "click", -> undoMove 0
-document.getElementById("undo-2").addEventListener "click", -> undoMove 1
-newGameBtn.addEventListener "click", -> newGame()
+initDom = ->
+	playerConfigs = [
+		{
+			slotId: "player1-slot"
+			playerId: "player1"
+			solutionId: "player1-solution"
+		}
+		{
+			slotId: "player2-slot"
+			playerId: "player2"
+			solutionId: "player2-solution"
+		}
+	]
 
-for op, index in ops
-	label = labels[index] or op.label
-	btn = document.createElement "button"
-	btn.textContent = label
-	btn.addEventListener "click", do (op) -> -> applyMove 0, op
-	opsEl.appendChild btn
-	opButtons.push btn
+	players = playerConfigs.map (cfg, idx) ->
+		signals = createPlayerSignals()
+		container = Player cfg.playerId, signals.current, signals.board, signals.expected, (-> undoMove idx)
+		slotEl = document.getElementById cfg.slotId
+		slotEl.replaceChildren container
+		{
+			index: idx
+			signals
+			ui: container
+			solutionEl: document.getElementById cfg.solutionId
+		}
 
-	row = document.createElement "tr"
-	cellLabel = document.createElement "td"
-	cellLabel.textContent = label
-	cellOp = document.createElement "td"
-	cellOp.textContent = op.reExpr
-	cellOpY = document.createElement "td"
-	cellOpY.textContent = op.imExpr
-	row.appendChild cellLabel
-	row.appendChild cellOp
-	row.appendChild cellOpY
-	opsTableEl.appendChild row
+	targetEl = document.getElementById "target"
+	solutionsEl = document.getElementById "solutions"
+	bfsSolutionEl = document.getElementById "bfs-solution"
+	newGameBtn = document.getElementById "new-game"
+	opsTableEl = document.getElementById "ops-table"
+	newGameBtn.addEventListener "click", -> newGame()
 
-	btn2 = document.createElement "button"
-	btn2.textContent = label
-	btn2.addEventListener "click", do (op) -> -> applyMove 1, op
-	opsEl2.appendChild btn2
-	opButtons.push btn2
+	opButtons = []
+	opRows = []
+	playerButtons = players.map -> []
+	for op, index in ops
+		label = labels[index] or op.label
+		row = tr {},
+			td({}, label),
+			td({}, op.reExpr),
+			td({}, op.imExpr)
+		opRows.push row
 
-newGame()
+		for player, idx in players
+			btn = button {}, label
+			btn.addEventListener "click", do (op, player) -> -> applyMove player.index, op
+			playerButtons[idx].push btn
+			opButtons.push btn
+
+	for player, idx in players
+		opsContainer = player.ui.querySelector ".ops"
+		opsContainer.replaceChildren playerButtons[idx]...
+
+	opsTableEl.replaceChildren opRows...
+	newGame()
+
+if document.readyState is "loading"
+	document.addEventListener "DOMContentLoaded", -> initDom()
+else
+	initDom()
