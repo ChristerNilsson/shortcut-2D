@@ -1,4 +1,4 @@
-import { button, createSignal, div, table, td, th, tr } from "https://cdn.jsdelivr.net/gh/sigmentjs/sigment-ng@1.3.4/dist/index.js"
+import { button, signal, div, table, td, th, tr } from "https://cdn.jsdelivr.net/gh/sigmentjs/sigment-ng@1.3.4/dist/index.js"
 import _ from "https://cdn.jsdelivr.net/npm/lodash-es@4.17.21/lodash.js"
 
 echo = console.log 
@@ -153,9 +153,9 @@ newGameBtn = null
 opsTableEl = null
 
 createPlayerSignals = ->
-	[current, setCurrent] = createSignal ""
-	[expected, setExpected] = createSignal ""
-	[board, setBoard] = createSignal null
+	[current, setCurrent] = signal ""
+	[expected, setExpected] = signal ""
+	[board, setBoard] = signal null
 	{
 		current
 		setCurrent
